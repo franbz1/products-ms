@@ -1,4 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaClient } from '@prisma/client';
@@ -6,22 +12,20 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class ProductsService extends PrismaClient implements OnModuleInit {
-
   private readonly logger = new Logger('ProductsService');
 
   onModuleInit() {
-      this.$connect();
-      this.logger.log('Connected to database');
+    this.$connect();
+    this.logger.log('Connected to database');
   }
 
-  create(createProductDto: CreateProductDto) {
-    return this.product.create({
-      data: createProductDto
-    })
+  async create(createProductDto: CreateProductDto) {
+    return await this.product.create({
+      data: createProductDto,
+    });
   }
 
-async findAll(paginationDto: PaginationDto) {
-
+  async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
 
     const totalProducts = await this.product.count();
@@ -37,12 +41,24 @@ async findAll(paginationDto: PaginationDto) {
         limit: limit,
         totalProducts: totalProducts,
         lastPage: lastPage,
-      }
-    }
+      },
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: number) {
+    if (typeof id !== 'number' || Number.isNaN(id)){
+      throw new BadRequestException('The ID is not a number')
+    }
+
+    const product = await this.product.findFirst({
+      where: { id },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID: ${id} was not found`);
+    }
+
+    return product;
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {
