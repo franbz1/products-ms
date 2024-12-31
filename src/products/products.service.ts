@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
@@ -29,11 +28,14 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
 
-    const totalProducts = await this.product.count();
+    const totalProducts = await this.product.count({
+      where: { available: true },
+    });
     const lastPage = Math.ceil(totalProducts / limit);
 
     return {
       data: await this.product.findMany({
+        where: { available: true },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -48,7 +50,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
 
   async findOne(id: number) {
     const product = await this.product.findFirst({
-      where: { id },
+      where: { id, available: true },
     });
 
     if (!product) {
@@ -59,23 +61,39 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
   }
 
   async update(id: number, updateProductDto: UpdateProductDto) {
-
     try {
       const product = await this.product.update({
         where: { id },
         data: updateProductDto,
       });
       return product;
-
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundException(`Product with ID: ${id} was not found`)
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Product with ID: ${id} was not found`);
       }
-      throw error
+      throw error;
     }
   }
 
   async remove(id: number) {
-    return `This action removes a #${id} product`;
+    try {
+      return await this.product.update({
+        where: { id, available: true },
+        data: {
+          available: false,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Product with ID: ${id} was not found`);
+      }
+      throw error;
+    }
   }
 }
