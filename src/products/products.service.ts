@@ -46,9 +46,6 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
   }
 
   async findOne(id: number) {
-    if (typeof id !== 'number' || Number.isNaN(id)){
-      throw new BadRequestException('The ID is not a number')
-    }
 
     const product = await this.product.findFirst({
       where: { id },
