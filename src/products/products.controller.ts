@@ -1,12 +1,5 @@
 import {
   Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
