@@ -14,8 +14,8 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 export class ProductsService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('ProductsService');
 
-  onModuleInit() {
-    this.$connect();
+  async onModuleInit() {
+    await this.$connect();
     this.logger.log('Connected to database');
   }
 
