@@ -9,6 +9,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaClient } from '@prisma/client';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ProductsService extends PrismaClient implements OnModuleInit {
@@ -46,7 +47,6 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
   }
 
   async findOne(id: number) {
-
     const product = await this.product.findFirst({
       where: { id },
     });
@@ -58,8 +58,21 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
     return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: number, updateProductDto: UpdateProductDto) {
+
+    try {
+      const product = await this.product.update({
+        where: { id },
+        data: updateProductDto,
+      });
+      return product;
+
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException(`Product with ID: ${id} was not found`)
+      }
+      throw error
+    }
   }
 
   remove(id: number) {
